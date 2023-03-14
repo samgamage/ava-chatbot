@@ -1,0 +1,17 @@
+openai
+fastapi
+black
+isort
+websockets
+pydantic
+pydantic[dotenv]
+langchain
+uvicorn
+jinja2
+faiss-cpu
+bs4
+unstructured
+libmagic
+google-api-python-client
+google-search-results
+aiohttp
