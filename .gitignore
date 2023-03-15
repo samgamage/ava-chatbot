@@ -8,6 +8,8 @@ __pycache__/
 
 dist/
 
+.github/pat.txt
+
 .env
 terraform.tfvars
 terraform.tfstate*
