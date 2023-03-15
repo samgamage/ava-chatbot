@@ -1,5 +1,9 @@
 variable "agent_count" {
-  default = 2
+  default = 1
+}
+
+variable "vm_size" {
+  default = "Standard_B1s"
 }
 
 # The following two variable declarations are placeholder references.
