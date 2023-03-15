@@ -22,10 +22,10 @@ jobs:
         with:
           context: "{{defaultContext}}:server"
           push: true
-          tags: samgamage/ava-server:{{github.ref}}
+          tags: samgamage/ava-server:${{ github.ref_name }}
       - name: Build and push client
         uses: docker/build-push-action@v4
         with:
           context: "{{defaultContext}}:client"
           push: true
-          tags: samgamage/ava-client:{{github.ref}}
+          tags: samgamage/ava-client:${{ github.ref_name }}
