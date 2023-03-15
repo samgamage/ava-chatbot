@@ -7,6 +7,8 @@ resources:
   - ../bases/client
   - ../bases/server
   - ../bases/cache
+  - client-hpa.yaml
+  - server-hpa.yaml
   - namespace.yaml
   - ingress.yaml
 
