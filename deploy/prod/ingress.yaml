@@ -1,0 +1,32 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    cert-manager.io/cluster-issuer: letsencrypt
+  name: ava-ingress
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - ava.samgamage.dev
+      secretName: ava-proxy-tls
+  rules:
+    - host: ava.samgamage.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ava-client
+                port:
+                  name: http
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: ava-server
+                port:
+                  name: http

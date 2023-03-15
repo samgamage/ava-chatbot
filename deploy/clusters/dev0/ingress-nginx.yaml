@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ingress-nginx
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta1
+kind: HelmRepository
+metadata:
+  name: ingress-nginx
+  namespace: flux-system
+spec:
+  interval: 30m
+  url: https://kubernetes.github.io/ingress-nginx
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: ingress-nginx
+  namespace: ingress-nginx
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: ingress-nginx/ingress-nginx
+      version: 4.1.3
+      sourceRef:
+        kind: HelmRepository
+        name: ingress-nginx
+      interval: 12h
+  values:
+    controller:
+      replicaCount: 2
+      service:
+        loadBalancerIP: 52.188.48.248
+        annotations:
+          service.beta.kubernetes.io/azure-dns-label-name: ava-chat
+          service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: /healthz

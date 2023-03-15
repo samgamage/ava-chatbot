@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: ava-production
+
+resources:
+  - ../bases/client
+  - ../bases/server
+  - ../bases/cache
+  - namespace.yaml
+  - ingress.yaml
+
+patchesStrategicMerge:
+  - config.yaml
+
+images:
+  - name: samgamage/ava-server
+    newTag: v0.1.0-beta.0
+  - name: samgamage/ava-client
+    newTag: v0.1.0-beta.0

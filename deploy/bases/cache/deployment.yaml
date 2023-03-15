@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: ava-redis
+    app.kubernetes.io/part-of: ava
+    app.kubernetes.io/component: redis
+  name: ava-redis
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ava-redis
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ava-redis
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+      serviceAccountName: ava-redis
+      containers:
+        - name: redis
+          image: redis:7.0.0-alpine
+          args:
+            - "--save"
+            - ""
+            - "--appendonly"
+            - "no"
+          ports:
+            - containerPort: 6379
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - all
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: ava-redis
+                topologyKey: kubernetes.io/hostname
+            - weight: 5
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/part-of: ava
+                topologyKey: kubernetes.io/hostname

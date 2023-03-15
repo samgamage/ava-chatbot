@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: ava-server
+    app.kubernetes.io/part-of: ava
+    app.kubernetes.io/component: server
+  name: ava-server
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ava-server
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ava-server
+    spec:
+      serviceAccountName: ava-server
+      containers:
+        - name: ava-server
+          image: samgamage/ava-server
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          env:
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: ava-server
+                  key: log.level
+                  optional: true
+            - name: REDIS_SERVER
+              valueFrom:
+                configMapKeyRef:
+                  name: ava-server
+                  key: redis.server
+            - name: OPENAI_APIKEY
+              valueFrom:
+                secretKeyRef:
+                  name: ava-server
+                  key: openai.apikey
+            - name: SERPAPI_APIKEY
+              valueFrom:
+                secretKeyRef:
+                  name: ava-server
+                  key: serpapi.apikey
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: ava-server
+                topologyKey: kubernetes.io/hostname
+            - weight: 5
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/part-of: ava
+                topologyKey: kubernetes.io/hostname
