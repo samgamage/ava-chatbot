@@ -36,7 +36,12 @@ async def get_redis(settings: Settings = Depends(get_settings)):
     return await aioredis.from_url(f"redis://{settings.redis_server}")
 
 
-@app.websocket("/chat")
+@app.get("/healthz")
+def get_healthz():
+    return {"status": "ok"}
+
+
+@app.websocket("/api/chat")
 async def websocket_endpoint(websocket: WebSocket, redis: Redis = Depends(get_redis), settings: Settings = Depends(get_settings)):
     await websocket.accept()
 
