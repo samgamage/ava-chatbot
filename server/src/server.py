@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     serpapi_api_key: str
     redis_server: str
 
+    class Config:
+        env_file = ".env"
+
 
 @lru_cache()
 def get_settings():
