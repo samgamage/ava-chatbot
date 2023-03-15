@@ -1,6 +1,6 @@
 """Callback handlers used in the app."""
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from langchain.callbacks.base import AsyncCallbackHandler
 from langchain.callbacks.stdout import StdOutCallbackHandler
@@ -11,7 +11,7 @@ from schemas import ChatResponse
 
 class StreamingCallbackHandler(AsyncCallbackHandler, StdOutCallbackHandler):
     """Callback handler for streaming LLM responses."""
-    
+
     is_streaming_bot_response = False
     response = ""
     ai_prefix = "AI"
@@ -28,7 +28,7 @@ class StreamingCallbackHandler(AsyncCallbackHandler, StdOutCallbackHandler):
         self.response += token
         
         if self.is_streaming_bot_response:
-            resp = ChatResponse(sender="bot", message=token, type="stream")
+            resp = ChatResponse(sender="bot", text=token, type="stream")
             await self.websocket.send_json(resp.dict())
         elif self.ai_regex.search(self.response):
             self.is_streaming_bot_response = True
@@ -43,7 +43,7 @@ class StreamingCallbackHandler(AsyncCallbackHandler, StdOutCallbackHandler):
         name = tool.get('name')
         
         if name == "Search":
-            resp = ChatResponse(sender="bot", message=input_str, type="search")
+            resp = ChatResponse(sender="bot", text=input_str, type="search")
             await self.websocket.send_json(resp.dict())
 
 

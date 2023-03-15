@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  api:
+    build: 
+      context: ./server
+      target: dev
+    volumes:
+      - ./server/src:/app
+    ports:
+      - 8080:8080
+    env_file:
+      - ./server/.env
+
+  redis:
+    image: redis:alpine
+    ports:
+      - 6379:6379
+
+  client:
+    build:
+      context: ./client
+      target: dev
+    volumes:
+      - ./client:/app
+    ports:
+      - 80:3000

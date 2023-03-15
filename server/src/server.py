@@ -32,7 +32,7 @@ def get_settings():
 @app.websocket("/chat")
 async def websocket_endpoint(websocket: WebSocket, settings: Settings = Depends(get_settings)):
     await websocket.accept()
-    
+
     streaming_callback_handler = StreamingCallbackHandler(websocket)
 
     llm = OpenAI(
@@ -42,28 +42,29 @@ async def websocket_endpoint(websocket: WebSocket, settings: Settings = Depends(
         verbose=True,
         temperature=0,
     )
-    
-    memory = ConversationBufferWindowMemory(memory_key="chat_history")
+
+    memory = ConversationBufferWindowMemory(memory_key="chat_history", k=10)
     search = SerpAPIWrapper(
         serpapi_api_key=settings.serpapi_api_key,
         search_engine="google",
     )
-    
+
     tools = [
         Tool(
-            name = "Search",
+            name="Search",
             func=search.run,
             coroutine=search.arun,
             description="useful for when you need to answer questions about current events or questions you DO NOT know the answer to",
         )
     ]
-    
+
     agent = ConversationalAgent.from_llm_and_tools(
         llm=llm,
         tools=tools,
         prefix=SYSTEM_PROMPT_PREFIX,
         suffix=SYSTEM_PROMPT_SUFFIX,
-        input_variables=["input", "chat_history", "agent_scratchpad", "language"],
+        input_variables=["input", "chat_history",
+                         "agent_scratchpad", "language"],
         memory=memory,
         verbose=True,
     )
@@ -73,36 +74,36 @@ async def websocket_endpoint(websocket: WebSocket, settings: Settings = Depends(
         verbose=True,
     )
     moderation_chain = OpenAIModerationChain(
-        memory=memory,
         openai_api_key=settings.openai_api_key,
         error=True,
     )
     chat_history = []
-    
+
     while True:
         try:
             # Receive and send back the client message
             message = await websocket.receive_text()
-            resp = ChatResponse(sender="you", message=message, type="stream")
+            resp = ChatResponse(sender="user", text=message, type="stream")
             await websocket.send_json(resp.dict())
 
             # Construct a response
-            start_resp = ChatResponse(sender="bot", message="", type="start")
+            start_resp = ChatResponse(sender="bot", text="", type="start")
             await websocket.send_json(start_resp.dict())
 
             # Run the agent
             response = await executor.arun(input=message, language="en", chat_history=chat_history)
 
-            end_resp = ChatResponse(sender="bot", message="", type="end")
+            end_resp = ChatResponse(sender="bot", text="", type="end")
             await websocket.send_json(end_resp.dict())
             chat_history.append((message, response))
-            
+
             try:
                 moderation_chain.run(response)
             except ValueError as err:
-                content_violation_resp = ChatResponse(sender="bot", message="Chat violates content policy.", type="error")
+                content_violation_resp = ChatResponse(
+                    sender="bot", text="Chat violates content policy.", type="error")
                 await websocket.send_json(content_violation_resp.dict())
-            
+
         except WebSocketDisconnect:
             logging.info("websocket disconnect")
             break
@@ -110,7 +111,7 @@ async def websocket_endpoint(websocket: WebSocket, settings: Settings = Depends(
             logging.error(e)
             resp = ChatResponse(
                 sender="bot",
-                message="Sorry, something went wrong.",
+                text="Sorry, something went wrong.",
                 type="error",
             )
             await websocket.send_json(resp.dict())

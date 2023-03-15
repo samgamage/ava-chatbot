@@ -6,13 +6,13 @@ class ChatResponse(BaseModel):
     """Chat response schema."""
 
     sender: str
-    message: str
+    text: str
     type: str
 
     @validator("sender")
     def sender_must_be_bot_or_you(cls, v):
-        if v not in ["bot", "you", "system"]:
-            raise ValueError("sender must be bot or you")
+        if v not in ["bot", "user", "system"]:
+            raise ValueError("sender must be bot, user or system")
         return v
 
     @validator("type")
