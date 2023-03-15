@@ -39,12 +39,12 @@ spec:
                 configMapKeyRef:
                   name: ava-server
                   key: redis.server
-            - name: OPENAI_APIKEY
+            - name: OPENAI_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: ava-server
                   key: openai.apikey
-            - name: SERPAPI_APIKEY
+            - name: SERPAPI_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: ava-server
