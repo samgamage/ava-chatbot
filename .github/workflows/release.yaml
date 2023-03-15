@@ -1,15 +1,11 @@
-name: ci
+name: release
 
 on:
-  push:
-    branches:
-      - "main"
-  pull_request:
-    branches:
-      - "main"
+  release:
+    types: [published]
 
 jobs:
-  build-push-images:
+  build-push-release-images:
     runs-on: ubuntu-latest
     steps:
       - name: Set up QEMU
@@ -21,15 +17,15 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Build and push
+      - name: Build and push server
         uses: docker/build-push-action@v4
         with:
           context: "{{defaultContext}}:server"
           push: true
-          tags: samgamage/ava-server:latest
-      - name: Build and push
+          tags: samgamage/ava-server:{{github.ref}}
+      - name: Build and push client
         uses: docker/build-push-action@v4
         with:
           context: "{{defaultContext}}:client"
           push: true
-          tags: samgamage/ava-client:latest
+          tags: samgamage/ava-client:{{github.ref}}
