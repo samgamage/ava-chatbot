@@ -7,3 +7,4 @@ resources:
   - cert-manager.yaml
   - cluster-issuer.yaml
   - ava-prod.yaml
+  - metrics-server.yaml
