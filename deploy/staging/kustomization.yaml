@@ -15,6 +15,6 @@ patchesStrategicMerge:
 
 images:
   - name: samgamage/ava-server
-    newTag: v0.1.0-beta.1
+    newTag: v0.1.0-beta.2
   - name: samgamage/ava-client
-    newTag: v0.1.0-beta.1
+    newTag: v0.1.0-beta.2
