@@ -2,8 +2,9 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
+  - ava-prod.yaml
   - flux-system
   - ingress-nginx.yaml
   - cert-manager.yaml
   - cluster-issuer.yaml
-  - ava-prod.yaml
+  - sealed-secrets.yaml
