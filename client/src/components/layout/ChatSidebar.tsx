@@ -8,9 +8,14 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { useChatStore } from "../../stores/chat";
 
 export const ChatSidebar: React.FC = () => {
-  const { clearMessages } = useChatStore();
+  const { clearMessages, startNewConversation } = useChatStore();
   const { colorMode, toggleColorMode } = useColorMode();
   const { logout } = useAuth0();
+
+  const handleNewChat = () => {
+    clearMessages();
+    startNewConversation();
+  };
 
   return (
     <div className="dark:bg-gray-900 bg-black/20 hidden md:fixed md:inset-y-0 md:flex md:w-[260px] md:flex-col">
@@ -19,7 +24,7 @@ export const ChatSidebar: React.FC = () => {
           <Button
             variant="outline"
             leftIcon={<PlusIcon height={19} />}
-            onClick={clearMessages}
+            onClick={handleNewChat}
           >
             New chat
           </Button>

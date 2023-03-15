@@ -1,6 +1,9 @@
 import logging
+import json
 from functools import lru_cache
 
+import aioredis
+from aioredis import Redis
 from fastapi import Depends, FastAPI, WebSocket, WebSocketDisconnect
 from pydantic import BaseSettings
 from langchain import OpenAI, SerpAPIWrapper
@@ -9,16 +12,16 @@ from langchain.agents import Tool, AgentExecutor, ConversationalAgent
 from langchain.callbacks.base import AsyncCallbackManager
 from langchain.chains.moderation import OpenAIModerationChain
 
-from callback import StreamingCallbackHandler
-from schemas import ChatResponse
+from callback import AgentCallbackHandler, StreamingCallbackHandler, ToolCallbackHandler
+from schemas import ChatResponse, UserInput
 from prompts import SYSTEM_PROMPT_PREFIX, SYSTEM_PROMPT_SUFFIX
 
 app = FastAPI()
 
-
 class Settings(BaseSettings):
     openai_api_key: str
     serpapi_api_key: str
+    redis_server: str
 
     class Config:
         env_file = ".env"
@@ -29,13 +32,20 @@ def get_settings():
     return Settings()
 
 
+async def get_redis(settings: Settings = Depends(get_settings)):
+    return await aioredis.from_url(f"redis://{settings.redis_server}")
+
+
 @app.websocket("/chat")
-async def websocket_endpoint(websocket: WebSocket, settings: Settings = Depends(get_settings)):
+async def websocket_endpoint(websocket: WebSocket, redis: Redis = Depends(get_redis), settings: Settings = Depends(get_settings)):
     await websocket.accept()
 
     streaming_callback_handler = StreamingCallbackHandler(websocket)
+    agent_callback_handler = AgentCallbackHandler(websocket)
+    tool_callback_handler = ToolCallbackHandler(websocket)
 
     llm = OpenAI(
+        model_name="gpt-3.5-turbo",
         openai_api_key=settings.openai_api_key,
         streaming=True,
         callback_manager=AsyncCallbackManager([streaming_callback_handler]),
@@ -43,7 +53,7 @@ async def websocket_endpoint(websocket: WebSocket, settings: Settings = Depends(
         temperature=0,
     )
 
-    memory = ConversationBufferWindowMemory(memory_key="chat_history", k=10)
+    memory = ConversationBufferWindowMemory(memory_key="chat_history")
     search = SerpAPIWrapper(
         serpapi_api_key=settings.serpapi_api_key,
         search_engine="google",
@@ -55,6 +65,7 @@ async def websocket_endpoint(websocket: WebSocket, settings: Settings = Depends(
             func=search.run,
             coroutine=search.arun,
             description="useful for when you need to answer questions about current events or questions you DO NOT know the answer to",
+            callback_manager=AsyncCallbackManager([tool_callback_handler])
         )
     ]
 
@@ -66,6 +77,7 @@ async def websocket_endpoint(websocket: WebSocket, settings: Settings = Depends(
         input_variables=["input", "chat_history",
                          "agent_scratchpad", "language"],
         memory=memory,
+        callback_manager=AsyncCallbackManager([agent_callback_handler]),
         verbose=True,
     )
     executor = AgentExecutor.from_agent_and_tools(
@@ -75,33 +87,48 @@ async def websocket_endpoint(websocket: WebSocket, settings: Settings = Depends(
     )
     moderation_chain = OpenAIModerationChain(
         openai_api_key=settings.openai_api_key,
+        memory=memory,
         error=True,
     )
     chat_history = []
+    conversation_cache_prefix = "conversation"
+    conversation_id = None
 
     while True:
         try:
+            if len(chat_history) == 10:
+                resp = ChatResponse(sender="bot", text="Reached conversation limit", type="error")
+                await websocket.send_json(resp.dict())
+                break
+            
             # Receive and send back the client message
-            message = await websocket.receive_text()
-            resp = ChatResponse(sender="user", text=message, type="stream")
-            await websocket.send_json(resp.dict())
+            message = await websocket.receive_json()
+            user_input = UserInput.parse_obj(message)
+            
+            conversation_id = user_input.conversation_id
 
             # Construct a response
-            start_resp = ChatResponse(sender="bot", text="", type="start")
+            start_resp = ChatResponse(sender="bot", text="", type="start", conversation_id=conversation_id)
             await websocket.send_json(start_resp.dict())
+            
+            chat_history_raw = await redis.get(f"{conversation_cache_prefix}:{conversation_id}")
+            chat_history = json.loads(chat_history_raw) if chat_history_raw else []
 
             # Run the agent
-            response = await executor.arun(input=message, language="en", chat_history=chat_history)
+            response = await executor.arun(input=user_input.text, language="en", chat_history=chat_history)
 
-            end_resp = ChatResponse(sender="bot", text="", type="end")
+            end_resp = ChatResponse(sender="bot", text="", type="end", conversation_id=conversation_id)
             await websocket.send_json(end_resp.dict())
             chat_history.append((message, response))
+            
+            # Save the conversation history
+            await redis.setex(f"{conversation_cache_prefix}:{conversation_id}", 60*60*24, json.dumps(chat_history))
 
             try:
                 moderation_chain.run(response)
             except ValueError as err:
                 content_violation_resp = ChatResponse(
-                    sender="bot", text="Chat violates content policy.", type="error")
+                    sender="bot", text="Chat violates content policy.", type="error", conversation_id=conversation_id)
                 await websocket.send_json(content_violation_resp.dict())
 
         except WebSocketDisconnect:
@@ -113,6 +140,7 @@ async def websocket_endpoint(websocket: WebSocket, settings: Settings = Depends(
                 sender="bot",
                 text="Sorry, something went wrong.",
                 type="error",
+                conversation_id=conversation_id
             )
             await websocket.send_json(resp.dict())
 

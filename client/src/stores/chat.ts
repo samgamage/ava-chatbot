@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import {v4 as uuid} from "uuid"
 
 export interface ChatMessage {
   sender: "user" | "bot";
@@ -7,7 +8,10 @@ export interface ChatMessage {
 }
 
 export interface ChatStore {
+  conversationId: string | null;
   messages: ChatMessage[];
+  startNewConversation(): void;
+  onSearchStart(query: string): void;
   onBotTokenReceived(token: string): void;
   addMessage(message: ChatMessage): void;
   clearMessages(): void;
@@ -15,7 +19,29 @@ export interface ChatStore {
 
 export const useChatStore = create<ChatStore>(
   (set) => ({
+    conversationId: null,
     messages: [],
+    startNewConversation() {
+      return set((state) => {
+        return {
+            ...state,
+            conversationId: uuid()
+        }
+      });
+    },
+    onSearchStart(query: string) {
+      return set((state) => {
+        const latestMessage = state.messages[state.messages.length - 1];
+        return {
+            ...state,
+            messages: [...state.messages.splice(0, state.messages.length - 1), {
+              sender: "bot",
+              type: "search",
+              text: `Searching for **${query}**`
+            }, latestMessage]
+        }
+      });
+    },
     onBotTokenReceived(token: string) {
       return set((state) => {
         const latestMessage = state.messages[state.messages.length - 1];

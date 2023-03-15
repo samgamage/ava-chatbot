@@ -1,5 +1,13 @@
 """Schemas for the chat app."""
+from typing import Optional
 from pydantic import BaseModel, validator
+
+
+class UserInput(BaseModel):
+    """Chat response schema."""
+
+    conversation_id: str
+    text: str
 
 
 class ChatResponse(BaseModel):
@@ -8,6 +16,7 @@ class ChatResponse(BaseModel):
     sender: str
     text: str
     type: str
+    conversation_id: Optional[str]
 
     @validator("sender")
     def sender_must_be_bot_or_you(cls, v):

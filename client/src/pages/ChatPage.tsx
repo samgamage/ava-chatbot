@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Helmet } from "react-helmet";
+import ScrollToBottom from "react-scroll-to-bottom";
 import Composer from "../components/Composer";
 import { shallow } from "zustand/shallow";
 import { EmptyMessages } from "../components/EmptyMessages";
@@ -9,11 +10,21 @@ import { useWebsocket } from "../lib/hooks/useSocket";
 import { ChatMessage, useChatStore } from "../stores/chat";
 
 export const ChatPage = () => {
-  const { messages, addMessage, onBotTokenReceived } = useChatStore(
+  const {
+    messages,
+    conversationId,
+    addMessage,
+    onBotTokenReceived,
+    onSearchStart,
+    startNewConversation,
+  } = useChatStore(
     (state) => ({
       messages: state.messages,
+      conversationId: state.conversationId,
       addMessage: state.addMessage,
       onBotTokenReceived: state.onBotTokenReceived,
+      onSearchStart: state.onSearchStart,
+      startNewConversation: state.startNewConversation,
     }),
     shallow
   );
@@ -27,12 +38,12 @@ export const ChatPage = () => {
       } else if (message.type === "stream") {
         onBotTokenReceived(message.text);
       } else if (message.type === "search") {
+        onSearchStart(message.text);
       } else if (message.type === "info") {
       } else if (message.type === "end") {
       } else if (message.type === "error") {
+        addMessage(message);
       }
-    } else {
-      addMessage(message);
     }
   };
 
@@ -60,11 +71,12 @@ export const ChatPage = () => {
       </Helmet>
       <main className="relative h-full w-full transition-width flex flex-col overflow-hidden items-stretch flex-1 dark:bg-gray-800 bg-white">
         <div className="flex-1 overflow-hidden">
-          <div className="flex flex-col items-center text-sm dark:bg-gray-800 overflow-y-auto h-full w-full">
+          <ScrollToBottom className="flex flex-col items-center text-sm dark:bg-gray-800 h-full w-full">
             {!messages.length ? (
               <EmptyMessages
                 onSelectPrompt={(prompt) => {
                   setMessage(prompt);
+                  if (!conversationId) startNewConversation();
                 }}
               />
             ) : (
@@ -78,7 +90,7 @@ export const ChatPage = () => {
               ))
             )}
             <div className="w-full h-32 md:h-48 flex-shrink-0"></div>
-          </div>
+          </ScrollToBottom>
         </div>
         <div className="absolute bottom-0 left-0 w-full border-t md:border-t-0 dark:border-white/20 md:border-transparent md:dark:border-transparent bg-white dark:bg-gray-800 md:!bg-transparent dark:md:bg-vert-dark-gradient pt-2 bg-gradient-to-t dark:from-gray-800 dark:via-gray-800 dark:to-transparent from-white via-white to-transparent ">
           <Composer message={message} setMessage={setMessage} />

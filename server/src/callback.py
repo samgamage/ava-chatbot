@@ -36,7 +36,14 @@ class StreamingCallbackHandler(AsyncCallbackHandler, StdOutCallbackHandler):
     async def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         self.is_streaming_bot_response = False
         self.response = ""
-    
+
+
+class ToolCallbackHandler(AsyncCallbackHandler, StdOutCallbackHandler):
+    """Callback handler for agent actions."""
+
+    def __init__(self, websocket):
+        self.websocket = websocket
+        
     async def on_tool_start(self, tool: Dict[str, Any], input_str: str, **kwargs: Any) -> None:
         await super().on_tool_start(tool, input_str, **kwargs)
         

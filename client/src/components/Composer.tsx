@@ -3,6 +3,7 @@ import clsx from "clsx";
 import React, { createRef, useEffect, useState } from "react";
 import PaperAirplaneIcon from "@heroicons/react/20/solid/PaperAirplaneIcon";
 import { useWebsocket } from "../lib/hooks/useSocket";
+import { useChatStore } from "../stores/chat";
 
 interface ComposerProps {
   message: string;
@@ -13,6 +14,10 @@ interface ComposerProps {
 
 const Composer: React.FC<ComposerProps> = (props) => {
   const { websocket } = useWebsocket();
+  const { conversationId, addMessage } = useChatStore((state) => ({
+    conversationId: state.conversationId,
+    addMessage: state.addMessage,
+  }));
   const { onSubmit, className, message, setMessage } = props;
   const [isFocused, setFocused] = useState<boolean>(false);
   const [isDisabled, setDisabled] = useState<boolean>(false);
@@ -43,7 +48,18 @@ const Composer: React.FC<ComposerProps> = (props) => {
     if (message.trim()) {
       if (onSubmit) onSubmit(e);
       setMessage("");
-      if (websocket) websocket.send(message);
+      if (websocket)
+        websocket.send(
+          JSON.stringify({
+            text: message,
+            conversation_id: conversationId,
+          })
+        );
+      addMessage({
+        sender: "user",
+        text: message,
+        type: "stream",
+      });
     }
   };
 

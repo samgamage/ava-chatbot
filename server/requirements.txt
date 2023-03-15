@@ -15,3 +15,4 @@ libmagic
 google-api-python-client
 google-search-results
 aiohttp
+aioredis
