@@ -1,8 +1,9 @@
-.PHONY: start
-start:
-	uvicorn main:app --reload --port 9000
+install:
+	pip install -r requirements.txt
 
-.PHONY: format
+start:
+	cd src && uvicorn server:app --reload --port 8081
+
 format:
 	black .
 	isort .
