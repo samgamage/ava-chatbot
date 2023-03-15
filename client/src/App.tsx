@@ -45,8 +45,8 @@ function App() {
             <ErrorBoundary FallbackComponent={ErrorPage} onReset={reset}>
               <Suspense fallback={<FullScreenLoading />}>
                 <Auth0Provider
-                  domain="dev-okpm815z.us.auth0.com"
-                  clientId="33IUpYYmOAYKwR3zEx7kP7TI5stRFb5G"
+                  domain={import.meta.env.VITE_AUTH_DOMAIN}
+                  clientId={import.meta.env.VITE_CLIENT_ID}
                   authorizationParams={{
                     redirect_uri: window.location.origin,
                   }}

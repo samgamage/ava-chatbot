@@ -45,7 +45,6 @@ async def websocket_endpoint(websocket: WebSocket, redis: Redis = Depends(get_re
     tool_callback_handler = ToolCallbackHandler(websocket)
 
     llm = OpenAI(
-        model_name="gpt-3.5-turbo",
         openai_api_key=settings.openai_api_key,
         streaming=True,
         callback_manager=AsyncCallbackManager([streaming_callback_handler]),

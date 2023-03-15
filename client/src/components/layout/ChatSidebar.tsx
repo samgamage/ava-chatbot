@@ -20,7 +20,7 @@ export const ChatSidebar: React.FC = () => {
   return (
     <div className="dark:bg-gray-900 bg-black/20 hidden md:fixed md:inset-y-0 md:flex md:w-[260px] md:flex-col">
       <div className="flex h-full min-h-0 flex-col">
-        <nav className="flex h-full flex-1 flex-col space-y-2 p-2">
+        <nav className="flex h-full flex-1 flex-col space-y-3 p-4">
           <Button
             variant="outline"
             leftIcon={<PlusIcon height={19} />}

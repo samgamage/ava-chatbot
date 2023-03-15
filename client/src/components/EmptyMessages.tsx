@@ -6,8 +6,11 @@ export interface EmptyMessagesProps {
 
 const PROMPTS = [
   "Who won the world series in 2022?",
-  "Who won the oscar for best picture in 2023?",
-  "How do I make an HTTP request with server sent events in JavaScript?",
+  "What is GPT-4 and who developed it?",
+  "Who is the current president of the United States?",
+  "What is the weather like in San Francisco?",
+  "What is the price of Microsoft stock?",
+  "Should OpenAI hire Samuel Gamage?",
 ];
 
 export const EmptyMessages: React.FC<EmptyMessagesProps> = ({
@@ -19,7 +22,7 @@ export const EmptyMessages: React.FC<EmptyMessagesProps> = ({
         <h1 className="text-4xl font-semibold text-center mt-6 sm:mt-[20vh] ml-auto mr-auto mb-10 sm:mb-16 flex gap-2 items-center justify-center">
           Ava
         </h1>
-        <div className="md:flex items-start text-center gap-3.5">
+        <div className="grid grid-cols-3 gap-3">
           {PROMPTS.map((prompt, index) => (
             <button
               key={index}

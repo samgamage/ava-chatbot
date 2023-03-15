@@ -17,7 +17,8 @@ const Message: React.FC<MessageProps> = (props) => {
   return (
     <div
       className={clsx(
-        "group w-full text-gray-800 dark:text-gray-100",
+        "group w-full",
+        type !== "error" && "text-gray-800 dark:text-gray-100",
         sender === "bot" && "bg-gray-100 dark:bg-gray-700",
         sender === "user" && "bg-transparent"
       )}
@@ -44,7 +45,12 @@ const Message: React.FC<MessageProps> = (props) => {
           <div className="flex flex-grow flex-col">
             <div className="min-h-[20px] flex flex-col items-start whitespace-pre-wrap">
               {sender === "bot" ? (
-                <Markdown className="markdown prose w-full break-words dark:prose-invert dark">
+                <Markdown
+                  className={clsx(
+                    "markdown prose w-full break-words dark:prose-invert dark",
+                    type === "error" && "text-red-400"
+                  )}
+                >
                   {text}
                 </Markdown>
               ) : (
