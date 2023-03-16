@@ -39,6 +39,11 @@ spec:
                 configMapKeyRef:
                   name: ava-server
                   key: redis.server
+            - name: AUTH_DOMAIN
+              valueFrom:
+                configMapKeyRef:
+                  name: ava-server
+                  key: auth.domain
             - name: OPENAI_API_KEY
               valueFrom:
                 secretKeyRef:
