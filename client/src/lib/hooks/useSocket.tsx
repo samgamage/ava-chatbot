@@ -1,3 +1,4 @@
+import { useAuth0 } from "@auth0/auth0-react";
 import {
   createContext,
   FunctionComponent,
@@ -36,6 +37,7 @@ const WebsocketProvider: FunctionComponent<{ children: ReactNode }> = ({
 }: {
   children: ReactNode;
 }) => {
+  const { getAccessTokenSilently } = useAuth0();
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -58,10 +60,29 @@ const WebsocketProvider: FunctionComponent<{ children: ReactNode }> = ({
       onSuccess: (websocket) => {
         setWebsocket(websocket);
 
-        websocket.onopen = (e) => {
+        websocket.onopen = async (e) => {
           setConnected(true);
           setIsLoading(false);
           setStatus("connected");
+          try {
+            const token = await getAccessTokenSilently({
+              authorizationParams: {
+                audience: `api://ava-chat`,
+                scope: "read:messages",
+              },
+            });
+            websocket.send(
+              JSON.stringify({
+                type: "authenticate",
+                token,
+              })
+            );
+          } catch (e) {
+            console.error(e);
+            setStatus("error");
+            setConnected(false);
+            throw new Error("Could not authenticate");
+          }
         };
 
         websocket.onclose = (e) => {

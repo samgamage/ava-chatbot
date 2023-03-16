@@ -55,6 +55,7 @@ const Composer: React.FC<ComposerProps> = (props) => {
       if (websocket)
         websocket.send(
           JSON.stringify({
+            type: "message",
             text: message,
             conversation_id: conversationId,
           })

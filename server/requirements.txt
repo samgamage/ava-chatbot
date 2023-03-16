@@ -15,4 +15,7 @@ libmagic
 google-api-python-client
 google-search-results
 aiohttp
+redis
 aioredis
+fastapi-limiter
+Authlib

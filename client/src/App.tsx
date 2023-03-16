@@ -49,6 +49,8 @@ function App() {
                   clientId={import.meta.env.VITE_CLIENT_ID}
                   authorizationParams={{
                     redirect_uri: window.location.origin,
+                    audience: "api://ava-chat",
+                    scope: "read:messages",
                   }}
                 >
                   <Router>
