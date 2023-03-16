@@ -6,7 +6,7 @@ from pydantic import BaseModel, validator
 class UserInput(BaseModel):
     """Chat response schema."""
 
-    conversation_id: str
+    conversation_id: Optional[str]
     text: str
 
 

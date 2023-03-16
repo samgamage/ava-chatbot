@@ -14,10 +14,13 @@ interface ComposerProps {
 
 const Composer: React.FC<ComposerProps> = (props) => {
   const { websocket } = useWebsocket();
-  const { conversationId, addMessage } = useChatStore((state) => ({
-    conversationId: state.conversationId,
-    addMessage: state.addMessage,
-  }));
+  const { conversationId, addMessage, startNewConversation } = useChatStore(
+    (state) => ({
+      conversationId: state.conversationId,
+      addMessage: state.addMessage,
+      startNewConversation: state.startNewConversation,
+    })
+  );
   const { onSubmit, className, message, setMessage } = props;
   const [isFocused, setFocused] = useState<boolean>(false);
   const [isDisabled, setDisabled] = useState<boolean>(false);
@@ -48,6 +51,7 @@ const Composer: React.FC<ComposerProps> = (props) => {
     if (message.trim()) {
       if (onSubmit) onSubmit(e);
       setMessage("");
+      if (!conversationId) startNewConversation();
       if (websocket)
         websocket.send(
           JSON.stringify({

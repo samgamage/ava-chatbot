@@ -1,6 +1,7 @@
 import logging
 import json
 from functools import lru_cache
+import uuid
 
 import aioredis
 from aioredis import Redis
@@ -99,24 +100,24 @@ async def websocket_endpoint(websocket: WebSocket, redis: Redis = Depends(get_re
     conversation_id = None
 
     while True:
-        try:
-            if len(chat_history) == 10:
-                resp = ChatResponse(sender="bot", text="Reached conversation limit", type="error")
-                await websocket.send_json(resp.dict())
-                break
-            
+        try:    
             # Receive and send back the client message
             message = await websocket.receive_json()
             user_input = UserInput.parse_obj(message)
             
-            conversation_id = user_input.conversation_id
+            conversation_id = user_input.conversation_id or uuid.uuid4().hex
+            
+            chat_history_raw = await redis.get(f"{conversation_cache_prefix}:{conversation_id}")
+            chat_history = json.loads(chat_history_raw) if chat_history_raw else []
 
             # Construct a response
             start_resp = ChatResponse(sender="bot", text="", type="start", conversation_id=conversation_id)
             await websocket.send_json(start_resp.dict())
             
-            chat_history_raw = await redis.get(f"{conversation_cache_prefix}:{conversation_id}")
-            chat_history = json.loads(chat_history_raw) if chat_history_raw else []
+            if len(chat_history) == 10:
+                resp = ChatResponse(sender="bot", text="Reached conversation limit", type="error")
+                await websocket.send_json(resp.dict())
+                break
 
             # Run the agent
             response = await executor.arun(input=user_input.text, language="en", chat_history=chat_history)
@@ -126,7 +127,7 @@ async def websocket_endpoint(websocket: WebSocket, redis: Redis = Depends(get_re
             chat_history.append((message, response))
             
             # Save the conversation history
-            await redis.setex(f"{conversation_cache_prefix}:{conversation_id}", 60*60*24, json.dumps(chat_history))
+            await redis.setex(f"{conversation_cache_prefix}:{conversation_id}", 60*60*12, json.dumps(chat_history))
 
             try:
                 moderation_chain.run(response)
