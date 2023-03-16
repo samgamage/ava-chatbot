@@ -8,4 +8,4 @@ metadata:
 data:
   log.level: info
   redis.server: ava-redis:6379
-  auth.domin: dev-okpm815z.us.auth0.com
+  auth.domain: dev-okpm815z.us.auth0.com
