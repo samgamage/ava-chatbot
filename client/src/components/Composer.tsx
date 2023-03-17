@@ -2,7 +2,6 @@ import { Transition } from "@headlessui/react";
 import clsx from "clsx";
 import React, { createRef, useEffect, useState } from "react";
 import PaperAirplaneIcon from "@heroicons/react/20/solid/PaperAirplaneIcon";
-import { useWebsocket } from "../lib/hooks/useSocket";
 import { useChatStore } from "../stores/chat";
 
 interface ComposerProps {
@@ -13,7 +12,6 @@ interface ComposerProps {
 }
 
 const Composer: React.FC<ComposerProps> = (props) => {
-  const { websocket } = useWebsocket();
   const { conversationId, addMessage, startNewConversation } = useChatStore(
     (state) => ({
       conversationId: state.conversationId,
@@ -49,17 +47,9 @@ const Composer: React.FC<ComposerProps> = (props) => {
   const handleOnSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
     if (message.trim()) {
-      if (onSubmit) onSubmit(e);
       setMessage("");
       if (!conversationId) startNewConversation();
-      if (websocket)
-        websocket.send(
-          JSON.stringify({
-            type: "message",
-            text: message,
-            conversation_id: conversationId,
-          })
-        );
+      if (onSubmit) onSubmit(e);
       addMessage({
         sender: "user",
         text: message,

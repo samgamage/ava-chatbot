@@ -65,18 +65,6 @@ const WebsocketProvider: FunctionComponent<{ children: ReactNode }> = ({
           setIsLoading(false);
           setStatus("connected");
           try {
-            const token = await getAccessTokenSilently({
-              authorizationParams: {
-                audience: `api://ava-chat`,
-                scope: "read:messages",
-              },
-            });
-            websocket.send(
-              JSON.stringify({
-                type: "authenticate",
-                token,
-              })
-            );
           } catch (e) {
             console.error(e);
             setStatus("error");

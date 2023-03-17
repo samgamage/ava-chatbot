@@ -14,6 +14,7 @@
     "@emotion/styled": "^11.10.6",
     "@headlessui/react": "^1.7.13",
     "@heroicons/react": "^2.0.16",
+    "@microsoft/fetch-event-source": "^2.0.1",
     "clsx": "^1.2.1",
     "dayjs": "^1.11.7",
     "framer-motion": "^10.3.1",

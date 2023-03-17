@@ -1,23 +1,42 @@
 """Schemas for the chat app."""
+import uuid
 from typing import Optional
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, validator, Field
+
+
+def gen_id(prefix=""):
+    """Generate a unique ID."""
+    return f"{prefix}{uuid.uuid4().hex}"
 
 
 class UserInput(BaseModel):
-    """Chat response schema."""
+    """User input schema."""
 
-    type: str
+    id: Optional[str] = Field(default_factory=lambda: gen_id(prefix="input_"))
+    object: Optional[str] = "user_input"
+    text: str
+    role: Optional[str] = "user"
     conversation_id: Optional[str]
-    text: Optional[str]
-    token: Optional[str]
+
+
+class SystemResponse(BaseModel):
+    """System response schema."""
+
+    id: Optional[str] = Field(default_factory=lambda: gen_id(prefix="sysresp_"))
+    object: Optional[str] = "system_response"
+    type: str
+    text: str
+    conversation_id: Optional[str]
 
 
 class ChatResponse(BaseModel):
     """Chat response schema."""
 
-    sender: str
-    text: str
+    id: Optional[str] = Field(default_factory=lambda: gen_id(prefix="chatresp_"))
+    object: Optional[str] = "chat_response"
     type: str
+    text: str
+    sender: str
     conversation_id: Optional[str]
 
     @validator("sender")

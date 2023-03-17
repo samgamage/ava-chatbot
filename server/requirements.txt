@@ -1,8 +1,9 @@
 openai
-fastapi
+fastapi[all]
+fastapi-limiter
+sse-starlette
 black
 isort
-websockets
 pydantic
 pydantic[dotenv]
 langchain
@@ -14,8 +15,8 @@ unstructured
 libmagic
 google-api-python-client
 google-search-results
+asyncio
 aiohttp
 redis
 aioredis
-fastapi-limiter
 Authlib

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Helmet } from "react-helmet";
 import ScrollToBottom from "react-scroll-to-bottom";
 import Composer from "../components/Composer";
@@ -6,10 +6,21 @@ import { shallow } from "zustand/shallow";
 import { EmptyMessages } from "../components/EmptyMessages";
 import FullScreenLoading from "../components/FullScreenLoading";
 import Message from "../components/Message";
-import { useWebsocket } from "../lib/hooks/useSocket";
 import { ChatMessage, useChatStore } from "../stores/chat";
+import { useMutation, useQuery } from "react-query";
+import { v4 } from "uuid";
+import { useAuth0 } from "@auth0/auth0-react";
+import {
+  EventStreamContentType,
+  fetchEventSource,
+} from "@microsoft/fetch-event-source";
+
+class RetriableError extends Error {}
+class FatalError extends Error {}
 
 export const ChatPage = () => {
+  const abortController = new AbortController();
+  const { getAccessTokenSilently } = useAuth0();
   const {
     messages,
     conversationId,
@@ -28,7 +39,6 @@ export const ChatPage = () => {
     }),
     shallow
   );
-  const { websocket, status } = useWebsocket();
   const [message, setMessage] = useState("");
 
   const onMessage = (message: ChatMessage) => {
@@ -45,20 +55,82 @@ export const ChatPage = () => {
     }
   };
 
-  useEffect(() => {
-    if (websocket && status === "connected") {
-      websocket.onmessage = (event) => {
-        const message = JSON.parse(event.data) as ChatMessage;
-        onMessage(message);
-      };
+  const tokenQuery = useQuery(
+    ["token"],
+    async () =>
+      await getAccessTokenSilently({
+        authorizationParams: {
+          audience: `api://ava-chat`,
+          scope: "read:messages",
+        },
+      })
+  );
+
+  const messageMuation = useMutation(
+    async () => {
+      await fetchEventSource(import.meta.env.VITE_API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${tokenQuery.data}`,
+        },
+        body: JSON.stringify({
+          id: v4(),
+          text: message,
+          role: "user",
+          conversation_id: conversationId,
+        }),
+        signal: abortController.signal,
+        async onopen(response) {
+          if (
+            response.ok &&
+            response.headers
+              .get("content-type")
+              ?.includes(EventStreamContentType)
+          ) {
+            return; // everything's good
+          } else if (
+            response.status >= 400 &&
+            response.status < 500 &&
+            response.status !== 429
+          ) {
+            // client-side errors are usually non-retriable:
+            throw new FatalError();
+          } else {
+            throw new RetriableError();
+          }
+        },
+        onmessage(msg) {
+          // if the server emits an error message, throw an exception
+          // so it gets handled by the onerror callback below:
+          if (msg.event === "FatalError") {
+            throw new FatalError(msg.data);
+          }
+
+          const message = JSON.parse(msg.data);
+          console.log(message);
+        },
+        onerror(err) {
+          console.error(err);
+          if (err instanceof FatalError) {
+            throw err; // rethrow to stop the operation
+          } else {
+            // do nothing to automatically retry. You can also
+            // return a specific retry interval here.
+          }
+        },
+      });
+    },
+    {
+      retry: false,
     }
+  );
 
-    return () => {
-      if (websocket) websocket.onmessage = null;
-    };
-  }, [websocket, status]);
+  const onSubmitMessage = () => {
+    messageMuation.mutate();
+  };
 
-  if (status === "loading") {
+  if (tokenQuery.status === "loading") {
     return <FullScreenLoading />;
   }
 
@@ -97,7 +169,11 @@ export const ChatPage = () => {
           </ScrollToBottom>
         </div>
         <div className="absolute bottom-0 left-0 w-full border-t md:border-t-0 dark:border-white/20 md:border-transparent md:dark:border-transparent bg-white dark:bg-gray-800 md:!bg-transparent dark:md:bg-vert-dark-gradient pt-2 bg-gradient-to-t dark:from-gray-800 dark:via-gray-800 dark:to-transparent from-white via-white to-transparent ">
-          <Composer message={message} setMessage={setMessage} />
+          <Composer
+            message={message}
+            setMessage={setMessage}
+            onSubmit={onSubmitMessage}
+          />
           <div className="px-3 pt-2 pb-3 text-center prose-a:text-sky-600 prose-sm text-sm text-black/50 dark:text-white/50 md:px-4 md:pt-3 md:pb-6">
             Project built by{" "}
             <a
