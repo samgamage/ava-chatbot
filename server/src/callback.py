@@ -1,6 +1,6 @@
 """Callback handlers used in the app."""
 import re
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 from langchain.callbacks.base import AsyncCallbackHandler
 from langchain.callbacks.stdout import StdOutCallbackHandler
@@ -17,8 +17,8 @@ class StreamingCallbackHandler(AsyncCallbackHandler, StdOutCallbackHandler):
     ai_prefix = "AI"
     ai_regex = None
 
-    def __init__(self, websocket, ai_prefix: Optional[str] = "AI"):
-        self.websocket = websocket
+    def __init__(self, stream_response: Any, ai_prefix: Optional[str] = "AI"):
+        self.stream_response = stream_response
         self.ai_prefix = ai_prefix
         self.ai_regex = re.compile(f"{self.ai_prefix}:")
         self.is_streaming_bot_response = False
@@ -29,7 +29,7 @@ class StreamingCallbackHandler(AsyncCallbackHandler, StdOutCallbackHandler):
         
         if self.is_streaming_bot_response:
             resp = ChatResponse(sender="bot", text=token, type="stream")
-            await self.websocket.send_json(resp.dict())
+            self.stream_response(resp)
         elif self.ai_regex.search(self.response):
             self.is_streaming_bot_response = True
             
