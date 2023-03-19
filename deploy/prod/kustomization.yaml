@@ -4,20 +4,20 @@ kind: Kustomization
 namespace: ava-production
 
 resources:
-  - ../bases/client
-  - ../bases/server
-  - ../bases/cache
-  - secret.yaml
-  - client-hpa.yaml
-  - server-hpa.yaml
-  - namespace.yaml
-  - ingress.yaml
+- ../bases/client
+- ../bases/server
+- ../bases/cache
+- secret.yaml
+- client-hpa.yaml
+- server-hpa.yaml
+- namespace.yaml
+- ingress.yaml
 
 patchesStrategicMerge:
-  - config.yaml
+- config.yaml
 
 images:
-  - name: samgamage/ava-server
-    newTag: v0.1.0-beta.9
-  - name: samgamage/ava-client
-    newTag: v0.1.0-beta.9
+- name: samgamage/ava-server
+  newTag: v0.1.0
+- name: samgamage/ava-client
+  newTag: v0.1.0
