@@ -72,6 +72,8 @@ async def websocket_endpoint(websocket: WebSocket, redis: Redis = Depends(get_re
         settings.api_identifier
     )
     ratelimit = WebSocketRateLimiter(times=1, seconds=5)
+    ratelimit2 = WebSocketRateLimiter(times=20, hours=1)
+    ratelimit3 = WebSocketRateLimiter(times=40, hours=24)
 
     streaming_callback_handler = StreamingCallbackHandler(websocket)
     agent_callback_handler = AgentCallbackHandler(websocket)
@@ -150,8 +152,10 @@ async def websocket_endpoint(websocket: WebSocket, redis: Redis = Depends(get_re
                     await websocket.send_json(resp.dict())
             else:
                 logger.info(f"user_id={user_id}")
-                resp = await ratelimit(websocket, context_key=user_id)
-                
+                await ratelimit(websocket, context_key=user_id)
+                await ratelimit2(websocket, context_key=user_id)
+                await ratelimit3(websocket, context_key=user_id)
+
                 chat_history_raw = await redis.get(f"{conversation_cache_prefix}:{conversation_id}")
                 chat_history = json.loads(chat_history_raw) if chat_history_raw else []
 
